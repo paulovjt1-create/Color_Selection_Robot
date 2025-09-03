@@ -1,0 +1,94 @@
+// Pinos de conexão do módulo
+#define pinS0 0
+#define pinS1 1
+#define pinS2 6
+#define pinS3 11
+#define pinOut 12
+#define pinLED 13
+
+unsigned int valorVermelho = 0;
+unsigned int valorVerde = 0;
+unsigned int valorAzul = 0;
+unsigned int valorBranco = 0;
+
+// Função para detectar cor
+void detectaCor();
+
+void setup() {
+  // Configuração dos pinos
+  pinMode(pinS0, OUTPUT);
+  pinMode(pinS1, OUTPUT);
+  pinMode(pinS2, OUTPUT);
+  pinMode(pinS3, OUTPUT);
+  pinMode(pinLED, OUTPUT);
+  pinMode(pinOut, INPUT);
+
+  Serial.begin(9600);
+
+  // Configura o módulo
+  digitalWrite(pinS0, HIGH); // Define frequência de escala como 100%
+  digitalWrite(pinS1, LOW);  // Define frequência de escala como 100%
+
+  delay(2000); // Tempo para estabilização do sensor
+}
+
+void loop() {
+  // Detecta a cor
+  detectaCor();
+
+  // Mostra valores no Serial Monitor
+  Serial.print("Vermelho: ");
+  Serial.print(valorVermelho);
+
+  Serial.print(" Verde: ");
+  Serial.print(valorVerde);
+
+  Serial.print(" Azul: ");
+  Serial.print(valorAzul);
+
+  Serial.print(" Branco: ");
+  Serial.print(valorBranco);
+  Serial.println();
+
+  // Verifica se a cor vermelha foi detectada
+  if ((valorVermelho < valorAzul) &&
+      (valorVermelho < valorVerde) &&
+      (valorBranco < 100)) {
+    Serial.println("Cor detectada: Vermelho");
+    // Verifica se a cor azul foi detectada
+  } else if ((valorAzul < valorVermelho) && // Verifica se a cor azul foi detectada
+             (valorAzul < valorVerde) &&
+             (valorBranco < 100)) {
+    Serial.println("Cor detectada: Azul");
+    // Verificar se a cor verde foi detectada
+  } else if ((valorVerde < valorVermelho) && // Verifica se a cor verde foi detectada
+             (valorVerde < valorAzul) &&
+             (valorBranco < 100)) {
+    Serial.println("Cor detectada: Verde");
+  }
+
+  delay(500); // Aguarda um tempo antes de repetir a leitura
+}
+
+// ** Função de leitura do sensor de cor **
+void detectaCor() {
+  // Vermelho
+  digitalWrite(pinS2, LOW);
+  digitalWrite(pinS3, LOW);
+  valorVermelho = pulseIn(pinOut, digitalRead(pinOut) == HIGH ? LOW : HIGH);
+
+  // Sem filtro (branco)
+  digitalWrite(pinS2, HIGH);
+  digitalWrite(pinS3, HIGH);
+  valorBranco = pulseIn(pinOut, digitalRead(pinOut) == HIGH ? LOW : HIGH);
+
+  // Azul
+  digitalWrite(pinS2, LOW);
+  digitalWrite(pinS3, HIGH);
+  valorAzul = pulseIn(pinOut, digitalRead(pinOut) == HIGH ? LOW : HIGH);
+
+  // Verde
+  digitalWrite(pinS2, HIGH);
+  digitalWrite(pinS3, LOW);
+  valorVerde = pulseIn(pinOut, digitalRead(pinOut) == HIGH ? LOW : HIGH);
+}
