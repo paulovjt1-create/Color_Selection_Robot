@@ -1,0 +1,278 @@
+#include <Servo.h> // Inclusão da biblioteca do servo motor
+
+// Definições dos pinos
+const int botaoPin = 7;
+const int trigPin = 8;
+const int echoPin = 9;
+const int motorPin = 10; // Motor de passo
+Servo serv1, serv2, serv3, serv4; // Servos do braço
+
+// Cria variáveis dos ângulos de cada motor
+int proxposition1, proxposition2, proxposition3, proxposition4, proxposition5, proxposition6, proxposition7, proxposition8, proxposition9, proxposition10, proxposition11, proxposition12, proxposition13;
+
+// Pinos de conexão do módulo RGB
+#define pinS0 0
+#define pinS1 1
+#define pinS2 6
+#define pinS3 11
+#define pinOut 12
+#define pinLED 13
+
+unsigned int valorVermelho = 0;
+unsigned int valorVerde = 0;
+unsigned int valorAzul = 0;
+unsigned int valorBranco = 0;
+
+// Constantes
+const int distanciaMinima = 1; // Distância mínima para detectar o objeto (em cm)
+
+// Variáveis
+bool esteiraLigada = false;
+
+// Funções principais
+bool detectaObjeto();
+String detectaCor();
+void moveBracoParaPonto1();
+void moveBracoParaPonto2();
+
+void setup() {
+  pinMode(botaoPin, INPUT_PULLUP);
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(motorPin, OUTPUT);
+
+  // Inicializar os servos
+  serv1.attach(2);
+  serv2.attach(3);
+  serv3.attach(4);
+  serv4.attach(5);
+
+  // Configuração do sensor RGB
+  pinMode(pinS0, OUTPUT);
+  pinMode(pinS1, OUTPUT);
+  pinMode(pinS2, OUTPUT);
+  pinMode(pinS3, OUTPUT);
+  pinMode(pinLED, OUTPUT);
+  pinMode(pinOut, INPUT);
+
+  // Configura o módulo RGB
+  digitalWrite(pinS0, HIGH); // Define frequência de escala como 100%
+  digitalWrite(pinS1, LOW);  // Define frequência de escala como 100%
+
+  Serial.begin(9600);
+  delay(2000); // Tempo para estabilização do sensor
+}
+
+void loop() {
+  // Verifica o botão
+  if (digitalRead(botaoPin) == LOW) { // Botão pressionado
+    esteiraLigada = true;
+    digitalWrite(motorPin, HIGH); // Liga o motor da esteira
+  }
+
+  // Detecta o objeto com o sensor ultrassônico
+  if (esteiraLigada && detectaObjeto()) {
+    digitalWrite(motorPin, LOW); // Para a esteira
+    esteiraLigada = false;
+
+    // Ativa o sensor RGB para identificar a cor da peça
+    String cor = detectaCor(); // Função para leitura do sensor RGB
+
+    // Movimenta o braço para o destino correto
+    if (cor == "VERDE") {
+      moveBracoParaPonto1();
+    } else if (cor == "AZUL") {
+      moveBracoParaPonto2();
+    }
+
+    // Reinicia a esteira após o braço colocar a peça
+    digitalWrite(motorPin, HIGH);
+    esteiraLigada = true;
+  }
+}
+
+// Função para detectar objeto com sensor ultrassônico
+bool detectaObjeto() {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  long duracao = pulseIn(echoPin, HIGH);
+  int distancia = duracao * 0.034 / 2; // Calcula a distância em cm
+  return (distancia <= distanciaMinima); // Retorna verdadeiro se a peça estiver a 1 cm
+}
+
+// Função para detectar a cor
+String detectaCor() {
+  // Vermelho
+  digitalWrite(pinS2, LOW);
+  digitalWrite(pinS3, LOW);
+  valorVermelho = pulseIn(pinOut, digitalRead(pinOut) == HIGH ? LOW : HIGH);
+
+  // Branco
+  digitalWrite(pinS2, HIGH);
+  digitalWrite(pinS3, HIGH);
+  valorBranco = pulseIn(pinOut, digitalRead(pinOut) == HIGH ? LOW : HIGH);
+
+  // Azul
+  digitalWrite(pinS2, LOW);
+  digitalWrite(pinS3, HIGH);
+  valorAzul = pulseIn(pinOut, digitalRead(pinOut) == HIGH ? LOW : HIGH);
+
+  // Verde
+  digitalWrite(pinS2, HIGH);
+  digitalWrite(pinS3, LOW);
+  valorVerde = pulseIn(pinOut, digitalRead(pinOut) == HIGH ? LOW : HIGH);
+
+  // Determina a cor
+  if (valorVermelho < valorAzul && valorVermelho < valorVerde && valorBranco < 100) {
+    return "VERMELHO";
+  } else if (valorAzul < valorVermelho && valorAzul < valorVerde && valorBranco < 100) {
+    return "AZUL";
+  } else if (valorVerde < valorVermelho && valorVerde < valorAzul && valorBranco < 100) {
+    return "VERDE";
+  }
+
+  return "INDEFINIDO";
+}
+
+// Funções para mover o braço
+void moveBracoParaPonto1() {
+  
+ // Posição inicial (P0)
+  serv1.write(74); // Servo 1 no ângulo 74º
+  serv2.write(45); // Servo 2 no ângulo 45º
+  serv3.write(0);  // Servo 3 no ângulo 0º
+  serv4.write(0);  // Servo 4 no ângulo 0º
+
+  delay(400); // Espera 400ms antes do próximo comando
+
+  // Movimento gradual (P1)
+  for (proxposition1 = 45; proxposition1 <= 148; proxposition1 += 1) {
+    serv2.write(proxposition1); // Movimento do Servo 2
+    delay(10);
+  }
+
+  for (proxposition2 = 0; proxposition2 <= 11; proxposition2 += 1) {
+    serv3.write(proxposition2); // Movimento do Servo 3
+    delay(10);
+  }
+
+  // Movimento gradual (P2)
+  for (proxposition3 = 0; proxposition3 <= 114; proxposition3 += 1) {
+    serv4.write(proxposition3); // Movimento do Servo 4
+    delay(10);
+  }
+
+  // Movimento gradual (P3)
+  for (proxposition4 = 148; proxposition4 >= 45; proxposition4 -= 1) { 
+    serv2.write(proxposition4); // Movimento reverso do Servo 2
+    delay(10);
+  }
+
+  for (proxposition5 = 11; proxposition5 >= 0; proxposition5 -= 1) {
+    serv3.write(proxposition5); // Movimento reverso do Servo 3
+    delay(10);
+  }
+
+  // Movimento gradual (P7)
+  for (proxposition6 = 74; proxposition6 <= 168; proxposition6 += 1) {
+    serv1.write(proxposition6); // Movimento do Servo 1
+    delay(10);
+  }
+
+  // Movimento gradual (P8)
+  for (proxposition7 = 45; proxposition7 <= 148; proxposition7 += 1) {
+    serv2.write(proxposition7); // Movimento do Servo 2
+    delay(10);
+  }
+
+  for (proxposition8 = 0; proxposition8 <= 11; proxposition8 += 1) {
+    serv3.write(proxposition8); // Movimento do Servo 3
+    delay(10);
+  }
+
+  // Movimento gradual (P9)
+  for (proxposition9 = 114; proxposition9 >= 0; proxposition9 -= 1) {
+    serv4.write(proxposition9); // Movimento do Servo 4
+    delay(10);
+  }
+
+  // Posição inicial (P0) novamente
+  serv1.write(74); // Servo 1 no ângulo 74º
+  serv2.write(45); // Servo 2 no ângulo 45º
+  serv3.write(0);  // Servo 3 no ângulo 0º
+  serv4.write(0);  // Servo 4 no ângulo 0º
+}
+
+void moveBracoParaPonto2() {
+  // Movimentos específicos para o ponto 2
+ // Posição inicial (P0)
+  serv1.write(74); // Servo 1 no ângulo 74º
+  serv2.write(45); // Servo 2 no ângulo 45º
+  serv3.write(0);  // Servo 3 no ângulo 0º
+  serv4.write(0);  // Servo 4 no ângulo 0º
+
+  delay(400); // Espera 400ms antes do próximo comando
+
+  // Movimento gradual (P1)
+  for (proxposition1 = 45; proxposition1 <= 148; proxposition1 += 1) {
+    serv2.write(proxposition1); // Movimento do Servo 2
+    delay(10);
+  }
+
+  for (proxposition2 = 0; proxposition2 <= 11; proxposition2 += 1) {
+    serv3.write(proxposition2); // Movimento do Servo 3
+    delay(10);
+  }
+
+  // Movimento gradual (P2)
+  for (proxposition3 = 0; proxposition3 <= 114; proxposition3 += 1) {
+    serv4.write(proxposition3); // Movimento do Servo 4
+    delay(10);
+  }
+
+  // Movimento gradual (P3)
+  for (proxposition4 = 148; proxposition4 >= 45; proxposition4 -= 1) { 
+    serv2.write(proxposition4); // Movimento reverso do Servo 2
+    delay(10);
+  }
+
+  for (proxposition5 = 11; proxposition5 >= 0; proxposition5 -= 1) {
+    serv3.write(proxposition5); // Movimento reverso do Servo 3
+    delay(10);
+  }
+
+  // Movimento gradual (P4)
+  for (proxposition10 = 74; proxposition10 <= 128; proxposition10 += 1) {
+    serv1.write(proxposition10); // Movimento do Servo 1
+    delay(10);
+  }
+
+  // Movimento gradual (P5)
+  for (proxposition11 = 45; proxposition11 <= 127; proxposition11 += 1) {
+    serv2.write(proxposition11); // Movimento do Servo 2
+    delay(10);
+  }
+
+  for (proxposition12 = 0; proxposition12 <= 11; proxposition12 += 1) {
+    serv3.write(proxposition12); // Movimento do Servo 3
+    delay(10);
+  }
+
+  // Movimento gradual (P6)
+  for (proxposition13 = 114; proxposition13 >= 0; proxposition13 -= 1) {
+    serv4.write(proxposition13); // Movimento do Servo 4 
+    delay(10);
+  }
+
+  // Posição inicial (P0) novamente
+  serv1.write(74); // Servo 1 no ângulo 74º
+  serv2.write(45); // Servo 2 no ângulo 45º
+  serv3.write(0);  // Servo 3 no ângulo 0º
+  serv4.write(0);  // Servo 4 no ângulo 0º
+
+  delay(500);
+}
